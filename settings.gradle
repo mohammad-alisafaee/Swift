@@ -1,0 +1,13 @@
+plugins {
+    // This plugin allows Gradle to auto-download JDKs (like Java 21)
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = "Swift"
+
+// Force build directory early since putting it in build.gradle doesn't work for some plugins and the `build` directory still gets created.
+gradle.beforeProject { p ->
+    File buildDirectory = p.rootDir.toPath().resolve(".build").toFile()
+    p.buildDir = buildDirectory
+    p.layout.buildDirectory.set(p.layout.projectDirectory.dir(".build"))
+}

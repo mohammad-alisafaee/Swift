@@ -1,0 +1,51 @@
+<idea-plugin>
+    <id>codes.belle.Swift</id>
+    <name>Swift LSP Plugin</name>
+    <vendor>Mohammad Alisafaee</vendor>
+
+    <depends>com.intellij.modules.ultimate</depends>
+    <depends>com.intellij.modules.lsp</depends>
+    <!--<depends>com.intellij.modules.platform</depends>--> <!--Is this needed?-->
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType
+                name="Swift"
+                implementationClass="codes.belle.swift.SwiftFileType"
+                fieldName="INSTANCE"
+                language="Swift"
+                extensions="swift;swiftinterface;swiftdoc;swiftmodule;"/>
+
+        <platform.lsp.serverSupportProvider
+                implementation="codes.belle.swift.SwiftLspServerSupportProvider"/>
+
+        <applicationService
+                serviceImplementation="codes.belle.swift.settings.SwiftLspSettings"/>
+
+        <applicationConfigurable
+                parentId="language"
+                id="codes.belle.swift.settings"
+                displayName="Swift LSP Plugin"
+                instance="codes.belle.swift.settings.SwiftLspSettingsConfigurable"/>
+
+        <lang.parserDefinition
+                language="Swift"
+                implementationClass="codes.belle.swift.SwiftParserDefinition"/>
+        <lang.syntaxHighlighter
+                language="Swift"
+                implementationClass="codes.belle.swift.SwiftSyntaxHighlighter"/>
+
+        <!--<resource-bundle>messages.Swift</resource-bundle>-->
+
+        <!--<toolWindow factoryClass="com.github.mohammadalisafaee.swift.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>-->
+
+        <!--<postStartupActivity implementation="com.github.mohammadalisafaee.swift.startup.MyProjectActivity"/>-->
+    </extensions>
+
+    <actions>
+        <action id="codes.belle.swift.RestartSwiftLsp"
+                class="codes.belle.swift.actions.RestartSwiftLspAction"
+                text="Restart Swift LSP Plugin">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>

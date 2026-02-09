@@ -1,0 +1,12 @@
+.idea/
+
+# Gradle
+.gradle/
+.intellijPlatform/
+gradle/
+gradlew
+gradlew.bat
+
+# Build output
+.build/
+build/
