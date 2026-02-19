@@ -21,6 +21,9 @@ public class SwiftLexer extends Lexer {
 
     private static final Set<String> TYPE_KEYWORDS = Set.of("class", "struct", "enum", "protocol", "extension", "typealias", "actor");
 
+    // Primitive types that should always be highlighted as types
+    private static final Set<String> PRIMITIVE_TYPES = Set.of("Int", "Int8", "Int16", "Int32", "Int64", "UInt", "UInt8", "UInt16", "UInt32", "UInt64", "Float", "Double", "Bool", "String", "Character", "Void", "Array", "Dictionary", "Set", "Optional", "Any", "AnyObject");
+
     @Override
     public void start(@NotNull CharSequence buffer, int startOffset, int endOffset, int initialState) {
         this.buffer = buffer;
@@ -102,9 +105,17 @@ public class SwiftLexer extends Lexer {
 
             String text = buffer.subSequence(startOffset, currentOffset).toString();
 
-            // Check if this is a type name (starts with uppercase or follows type keyword)
+            // Always mark primitive types as PRIMITIVE_TYPE
+            if (PRIMITIVE_TYPES.contains(text)) {
+                currentToken = SwiftTokenTypes.PRIMITIVE_TYPE;
+            }
+            // Check if this is a type name (follows type keyword like "class", "struct", etc.)
             // This must be checked BEFORE parameter check to handle "class AppDelegate:" correctly
-            if (Character.isUpperCase(text.charAt(0)) || isAfterTypeKeyword()) {
+            else if (isAfterTypeKeyword()) {
+                currentToken = SwiftTokenTypes.TYPE_NAME;
+            }
+            // Check if uppercase identifier is in type position (after : or ->)
+            else if (Character.isUpperCase(text.charAt(0)) && isInTypePosition()) {
                 currentToken = SwiftTokenTypes.TYPE_NAME;
             }
             // Check if this is a parameter (identifier followed by colon, but not a type)
@@ -121,6 +132,26 @@ public class SwiftLexer extends Lexer {
         // 6. Handle everything else (symbols like { } ( ) . ,)
         currentOffset++;
         currentToken = SwiftTokenTypes.IDENTIFIER;
+    }
+
+    private boolean isInTypePosition() {
+        // Check if we're after : or -> which indicates a type position
+        int pos = startOffset - 1;
+
+        // Skip whitespace backwards
+        while (pos >= 0 && Character.isWhitespace(buffer.charAt(pos))) {
+            pos--;
+        }
+
+        if (pos < 0) return false;
+
+        // Check for : (variable/parameter type annotation)
+        if (buffer.charAt(pos) == ':') return true;
+
+        // Check for -> (return type)
+        if (pos >= 1 && buffer.charAt(pos) == '>' && buffer.charAt(pos - 1) == '-') return true;
+
+        return false;
     }
 
     private boolean isFollowedByColon() {
