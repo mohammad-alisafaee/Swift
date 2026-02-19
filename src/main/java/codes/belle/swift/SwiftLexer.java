@@ -10,6 +10,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
+/**
+ * Basic lexer for Swift syntax highlighting.
+ *
+ * This lexer handles only syntactic elements (keywords, strings, comments, annotations, compiler directives).
+ * Semantic highlighting (types, functions, variables, parameters) is delegated to the LSP server via semantic tokens.
+ * This hybrid approach provides instant basic highlighting while allowing accurate semantic analysis from SourceKit-LSP.
+ */
 public class SwiftLexer extends Lexer {
     private CharSequence buffer;
     private int startOffset;
@@ -21,7 +28,7 @@ public class SwiftLexer extends Lexer {
 
     private static final Set<String> TYPE_KEYWORDS = Set.of("class", "struct", "enum", "protocol", "extension", "typealias", "actor");
 
-    // Primitive types that should always be highlighted as types
+    // Primitive types that should be highlighted
     private static final Set<String> PRIMITIVE_TYPES = Set.of("Int", "Int8", "Int16", "Int32", "Int64", "UInt", "UInt8", "UInt16", "UInt32", "UInt64", "Float", "Double", "Bool", "String", "Character", "Void", "Array", "Dictionary", "Set", "Optional", "Any", "AnyObject");
 
     @Override
@@ -105,25 +112,28 @@ public class SwiftLexer extends Lexer {
 
             String text = buffer.subSequence(startOffset, currentOffset).toString();
 
+            // Check if this is a keyword first
+            if (KEYWORDS.contains(text)) {
+                currentToken = SwiftTokenTypes.KEYWORD;
+            }
             // Always mark primitive types as PRIMITIVE_TYPE
-            if (PRIMITIVE_TYPES.contains(text)) {
+            else if (PRIMITIVE_TYPES.contains(text)) {
                 currentToken = SwiftTokenTypes.PRIMITIVE_TYPE;
             }
             // Check if this is a type name (follows type keyword like "class", "struct", etc.)
-            // This must be checked BEFORE parameter check to handle "class AppDelegate:" correctly
             else if (isAfterTypeKeyword()) {
                 currentToken = SwiftTokenTypes.TYPE_NAME;
             }
-            // Check if uppercase identifier is in type position (after : or ->)
-            else if (Character.isUpperCase(text.charAt(0)) && isInTypePosition()) {
+            // Check if uppercase identifier is likely a type
+            else if (Character.isUpperCase(text.charAt(0)) && isLikelyType()) {
                 currentToken = SwiftTokenTypes.TYPE_NAME;
             }
-            // Check if this is a parameter (identifier followed by colon, but not a type)
+            // Check if this is a parameter (identifier followed by colon)
             else if (isFollowedByColon()) {
                 currentToken = SwiftTokenTypes.PARAMETER;
-            } else if (KEYWORDS.contains(text)) {
-                currentToken = SwiftTokenTypes.KEYWORD;
-            } else {
+            }
+            // Everything else is an identifier
+            else {
                 currentToken = SwiftTokenTypes.IDENTIFIER;
             }
             return;
@@ -134,8 +144,24 @@ public class SwiftLexer extends Lexer {
         currentToken = SwiftTokenTypes.IDENTIFIER;
     }
 
-    private boolean isInTypePosition() {
-        // Check if we're after : or -> which indicates a type position
+    private boolean isLikelyType() {
+        // Check what comes after the identifier
+        int posAhead = currentOffset;
+        while (posAhead < endOffset && Character.isWhitespace(buffer.charAt(posAhead))) {
+            posAhead++;
+        }
+
+        if (posAhead < endOffset) {
+            char nextChar = buffer.charAt(posAhead);
+            // Followed by ( = constructor call like SettingsManager()
+            if (nextChar == '(') return true;
+            // Followed by . = static member access like SettingsManager.shared
+            if (nextChar == '.') return true;
+            // Followed by , = type list like "NSObject, NSApplicationDelegate"
+            if (nextChar == ',') return true;
+        }
+
+        // Check what comes before the identifier
         int pos = startOffset - 1;
 
         // Skip whitespace backwards
@@ -145,11 +171,19 @@ public class SwiftLexer extends Lexer {
 
         if (pos < 0) return false;
 
-        // Check for : (variable/parameter type annotation)
-        if (buffer.charAt(pos) == ':') return true;
+        char prevChar = buffer.charAt(pos);
 
-        // Check for -> (return type)
-        if (pos >= 1 && buffer.charAt(pos) == '>' && buffer.charAt(pos - 1) == '-') return true;
+        // After : (variable/parameter type annotation)
+        if (prevChar == ':') return true;
+
+        // After , (type list like "NSObject, NSApplicationDelegate")
+        if (prevChar == ',') return true;
+
+        // After -> (return type)
+        if (pos >= 1 && prevChar == '>' && buffer.charAt(pos - 1) == '-') return true;
+
+        // After . (member access on a type, like SomeType.staticMember)
+        if (prevChar == '.') return true;
 
         return false;
     }
