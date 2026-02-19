@@ -10,3 +10,4 @@ gradlew.bat
 # Build output
 .build/
 build/
+.intellij-temporary/

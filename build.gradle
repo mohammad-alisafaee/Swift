@@ -7,7 +7,7 @@ plugins {
 layout.buildDirectory = file("$rootDir/.build")
 
 group = 'codes.belle'
-version = '0.1.0'
+version = '1.0.0'
 
 repositories {
     mavenCentral()
@@ -30,10 +30,9 @@ dependencies {
 }
 
 intellijPlatform {
-    pluginConfiguration {
-        ideaVersion {
-            sinceBuild = '233'
-            untilBuild = '253.*'
-        }
-    }
+    // Change the directory where runIde task stores its sandbox configuration to avoid being deleted when running `clean` task.
+    sandboxContainer = layout.projectDirectory.dir(".intellij-temporary")
+
+    pluginConfiguration.ideaVersion.sinceBuild = '233'
+    pluginConfiguration.ideaVersion.untilBuild = '253.*'
 }
