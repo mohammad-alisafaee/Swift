@@ -31,8 +31,8 @@ public class SwiftParserDefinition implements ParserDefinition {
             while (!builder.eof()) {
                 IElementType type = builder.getTokenType();
 
-                // THE FIX: Wrap IDENTIFIER tokens in a composite node
-                if (type == SwiftTokenTypes.IDENTIFIER) {
+                // Wrap IDENTIFIER and TYPE_NAME tokens in a composite node for LSP navigation
+                if (type == SwiftTokenTypes.IDENTIFIER || type == SwiftTokenTypes.TYPE_NAME) {
                     PsiBuilder.Marker mark = builder.mark();
                     builder.advanceLexer(); // Consume the token
                     mark.done(SwiftTokenTypes.IDENTIFIER_WRAPPER);
