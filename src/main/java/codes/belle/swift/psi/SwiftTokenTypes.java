@@ -11,6 +11,8 @@ public interface SwiftTokenTypes {
     IElementType STRING = new IElementType("STRING", SwiftLanguage.INSTANCE);
     IElementType ANNOTATION = new IElementType("ANNOTATION", SwiftLanguage.INSTANCE);
     IElementType TYPE_NAME = new IElementType("TYPE_NAME", SwiftLanguage.INSTANCE);
+    IElementType PARAMETER = new IElementType("PARAMETER", SwiftLanguage.INSTANCE);
+    IElementType COMPILER_DIRECTIVE = new IElementType("COMPILER_DIRECTIVE", SwiftLanguage.INSTANCE);
 
     // Composite elements (created by Parser)
     IElementType IDENTIFIER_WRAPPER = new IElementType("IDENTIFIER_WRAPPER", SwiftLanguage.INSTANCE);

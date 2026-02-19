@@ -21,6 +21,10 @@ public class SwiftSyntaxHighlighter extends SyntaxHighlighterBase {
             TextAttributesKey.createTextAttributesKey("SWIFT_ANNOTATION", DefaultLanguageHighlighterColors.METADATA);
     public static final TextAttributesKey TYPE_NAME =
             TextAttributesKey.createTextAttributesKey("SWIFT_TYPE_NAME", DefaultLanguageHighlighterColors.CLASS_NAME);
+    public static final TextAttributesKey PARAMETER =
+            TextAttributesKey.createTextAttributesKey("SWIFT_PARAMETER", DefaultLanguageHighlighterColors.PARAMETER);
+    public static final TextAttributesKey COMPILER_DIRECTIVE =
+            TextAttributesKey.createTextAttributesKey("SWIFT_COMPILER_DIRECTIVE", DefaultLanguageHighlighterColors.METADATA);
 
     @Override
     public @NotNull Lexer getHighlightingLexer() {
@@ -35,6 +39,8 @@ public class SwiftSyntaxHighlighter extends SyntaxHighlighterBase {
         if (tokenType.equals(SwiftTokenTypes.STRING)) return pack(STRING);
         if (tokenType.equals(SwiftTokenTypes.ANNOTATION)) return pack(ANNOTATION);
         if (tokenType.equals(SwiftTokenTypes.TYPE_NAME)) return pack(TYPE_NAME);
+        if (tokenType.equals(SwiftTokenTypes.PARAMETER)) return pack(PARAMETER);
+        if (tokenType.equals(SwiftTokenTypes.COMPILER_DIRECTIVE)) return pack(COMPILER_DIRECTIVE);
         return new TextAttributesKey[0];
     }
 }

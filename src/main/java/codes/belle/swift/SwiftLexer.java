@@ -49,7 +49,17 @@ public class SwiftLexer extends Lexer {
             return;
         }
 
-        // 2. Handle Annotations (@name)
+        // 2. Handle Compiler Directives (#selector, #available, etc.)
+        if (c == '#' && currentOffset + 1 < endOffset && Character.isJavaIdentifierStart(buffer.charAt(currentOffset + 1))) {
+            currentOffset++; // Skip #
+            while (currentOffset < endOffset && Character.isJavaIdentifierPart(buffer.charAt(currentOffset))) {
+                currentOffset++;
+            }
+            currentToken = SwiftTokenTypes.COMPILER_DIRECTIVE;
+            return;
+        }
+
+        // 3. Handle Annotations (@name)
         if (c == '@' && currentOffset + 1 < endOffset && Character.isJavaIdentifierStart(buffer.charAt(currentOffset + 1))) {
             currentOffset++; // Skip @
             while (currentOffset < endOffset && Character.isJavaIdentifierPart(buffer.charAt(currentOffset))) {
@@ -93,8 +103,13 @@ public class SwiftLexer extends Lexer {
             String text = buffer.subSequence(startOffset, currentOffset).toString();
 
             // Check if this is a type name (starts with uppercase or follows type keyword)
+            // This must be checked BEFORE parameter check to handle "class AppDelegate:" correctly
             if (Character.isUpperCase(text.charAt(0)) || isAfterTypeKeyword()) {
                 currentToken = SwiftTokenTypes.TYPE_NAME;
+            }
+            // Check if this is a parameter (identifier followed by colon, but not a type)
+            else if (isFollowedByColon()) {
+                currentToken = SwiftTokenTypes.PARAMETER;
             } else if (KEYWORDS.contains(text)) {
                 currentToken = SwiftTokenTypes.KEYWORD;
             } else {
@@ -106,6 +121,18 @@ public class SwiftLexer extends Lexer {
         // 6. Handle everything else (symbols like { } ( ) . ,)
         currentOffset++;
         currentToken = SwiftTokenTypes.IDENTIFIER;
+    }
+
+    private boolean isFollowedByColon() {
+        // Look ahead to see if there's a colon after optional whitespace
+        int pos = currentOffset;
+
+        // Skip whitespace forward
+        while (pos < endOffset && Character.isWhitespace(buffer.charAt(pos))) {
+            pos++;
+        }
+
+        return pos < endOffset && buffer.charAt(pos) == ':';
     }
 
     private boolean isAfterTypeKeyword() {
