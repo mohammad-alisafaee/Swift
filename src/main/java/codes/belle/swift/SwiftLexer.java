@@ -28,6 +28,8 @@ public class SwiftLexer extends Lexer {
 
     private static final Set<String> TYPE_KEYWORDS = Set.of("class", "struct", "enum", "protocol", "extension", "typealias", "actor");
 
+    private static final Set<String> VARIABLE_KEYWORDS = Set.of("let", "var");
+
     // Primitive types that should be highlighted
     private static final Set<String> PRIMITIVE_TYPES = Set.of("Int", "Int8", "Int16", "Int32", "Int64", "UInt", "UInt8", "UInt16", "UInt32", "UInt64", "Float", "Double", "Bool", "String", "Character", "Void", "Array", "Dictionary", "Set", "Optional", "Any", "AnyObject");
 
@@ -128,6 +130,10 @@ public class SwiftLexer extends Lexer {
             else if (Character.isUpperCase(text.charAt(0)) && isLikelyType()) {
                 currentToken = SwiftTokenTypes.TYPE_NAME;
             }
+            // Check if this is a local variable (after let/var keyword)
+            else if (isAfterVariableKeyword()) {
+                currentToken = SwiftTokenTypes.LOCAL_VARIABLE;
+            }
             // Check if this is a parameter (identifier followed by colon)
             else if (isFollowedByColon()) {
                 currentToken = SwiftTokenTypes.PARAMETER;
@@ -219,6 +225,27 @@ public class SwiftLexer extends Lexer {
 
         String prevWord = buffer.subSequence(pos + 1, wordEnd).toString();
         return TYPE_KEYWORDS.contains(prevWord);
+    }
+
+    private boolean isAfterVariableKeyword() {
+        // Look backwards to see if we're after "let" or "var"
+        int pos = startOffset - 1;
+
+        // Skip whitespace backwards
+        while (pos >= 0 && Character.isWhitespace(buffer.charAt(pos))) {
+            pos--;
+        }
+
+        if (pos < 0) return false;
+
+        // Find the start of the previous word
+        int wordEnd = pos + 1;
+        while (pos >= 0 && Character.isJavaIdentifierPart(buffer.charAt(pos))) {
+            pos--;
+        }
+
+        String prevWord = buffer.subSequence(pos + 1, wordEnd).toString();
+        return VARIABLE_KEYWORDS.contains(prevWord);
     }
 
     @Override

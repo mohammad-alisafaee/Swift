@@ -14,6 +14,7 @@ public interface SwiftTokenTypes {
     IElementType PARAMETER = new IElementType("PARAMETER", SwiftLanguage.INSTANCE);
     IElementType COMPILER_DIRECTIVE = new IElementType("COMPILER_DIRECTIVE", SwiftLanguage.INSTANCE);
     IElementType PRIMITIVE_TYPE = new IElementType("PRIMITIVE_TYPE", SwiftLanguage.INSTANCE);
+    IElementType LOCAL_VARIABLE = new IElementType("LOCAL_VARIABLE", SwiftLanguage.INSTANCE);
 
     // Composite elements (created by Parser)
     IElementType IDENTIFIER_WRAPPER = new IElementType("IDENTIFIER_WRAPPER", SwiftLanguage.INSTANCE);
