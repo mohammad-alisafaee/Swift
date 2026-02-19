@@ -19,6 +19,8 @@ public class SwiftLexer extends Lexer {
 
     private static final Set<String> KEYWORDS = Set.of("associatedtype", "class", "deinit", "enum", "extension", "fileprivate", "func", "import", "init", "inout", "internal", "let", "open", "operator", "override", "private", "protocol", "public", "rethrows", "static", "struct", "subscript", "typealias", "var", "break", "case", "continue", "default", "defer", "do", "else", "fallthrough", "for", "guard", "if", "in", "repeat", "return", "switch", "weak", "where", "while", "as", "any", "catch", "false", "is", "nil", "super", "self", "Self", "throw", "throws", "true", "try", "required", "final");
 
+    private static final Set<String> TYPE_KEYWORDS = Set.of("class", "struct", "enum", "protocol", "extension", "typealias", "actor");
+
     @Override
     public void start(@NotNull CharSequence buffer, int startOffset, int endOffset, int initialState) {
         this.buffer = buffer;
@@ -47,7 +49,17 @@ public class SwiftLexer extends Lexer {
             return;
         }
 
-        // 2. Handle Comments (Single line //)
+        // 2. Handle Annotations (@name)
+        if (c == '@' && currentOffset + 1 < endOffset && Character.isJavaIdentifierStart(buffer.charAt(currentOffset + 1))) {
+            currentOffset++; // Skip @
+            while (currentOffset < endOffset && Character.isJavaIdentifierPart(buffer.charAt(currentOffset))) {
+                currentOffset++;
+            }
+            currentToken = SwiftTokenTypes.ANNOTATION;
+            return;
+        }
+
+        // 3. Handle Comments (Single line //)
         if (c == '/' && currentOffset + 1 < endOffset && buffer.charAt(currentOffset + 1) == '/') {
             while (currentOffset < endOffset && buffer.charAt(currentOffset) != '\n') {
                 currentOffset++;
@@ -56,7 +68,7 @@ public class SwiftLexer extends Lexer {
             return;
         }
 
-        // 3. Handle Strings ("...")
+        // 4. Handle Strings ("...")
         if (c == '"') {
             currentOffset++; // skip opening quote
             while (currentOffset < endOffset) {
@@ -70,9 +82,8 @@ public class SwiftLexer extends Lexer {
             return;
         }
 
-        // 4. Handle Identifiers and Keywords
+        // 5. Handle Identifiers and Keywords
         if (Character.isJavaIdentifierStart(c)) {
-            // FIX: Always consume at least one character (the start char)
             currentOffset++;
 
             while (currentOffset < endOffset && Character.isJavaIdentifierPart(buffer.charAt(currentOffset))) {
@@ -80,7 +91,11 @@ public class SwiftLexer extends Lexer {
             }
 
             String text = buffer.subSequence(startOffset, currentOffset).toString();
-            if (KEYWORDS.contains(text)) {
+
+            // Check if this is a type name (starts with uppercase or follows type keyword)
+            if (Character.isUpperCase(text.charAt(0)) || isAfterTypeKeyword()) {
+                currentToken = SwiftTokenTypes.TYPE_NAME;
+            } else if (KEYWORDS.contains(text)) {
                 currentToken = SwiftTokenTypes.KEYWORD;
             } else {
                 currentToken = SwiftTokenTypes.IDENTIFIER;
@@ -88,10 +103,30 @@ public class SwiftLexer extends Lexer {
             return;
         }
 
-        // 5. Handle everything else (symbols like { } ( ) . ,)
-        // SAFETY NET: If we reached here, we MUST consume 1 char.
+        // 6. Handle everything else (symbols like { } ( ) . ,)
         currentOffset++;
         currentToken = SwiftTokenTypes.IDENTIFIER;
+    }
+
+    private boolean isAfterTypeKeyword() {
+        // Look backwards to see if we're after a type keyword like "class", "struct", etc.
+        int pos = startOffset - 1;
+
+        // Skip whitespace backwards
+        while (pos >= 0 && Character.isWhitespace(buffer.charAt(pos))) {
+            pos--;
+        }
+
+        if (pos < 0) return false;
+
+        // Find the start of the previous word
+        int wordEnd = pos + 1;
+        while (pos >= 0 && Character.isJavaIdentifierPart(buffer.charAt(pos))) {
+            pos--;
+        }
+
+        String prevWord = buffer.subSequence(pos + 1, wordEnd).toString();
+        return TYPE_KEYWORDS.contains(prevWord);
     }
 
     @Override
